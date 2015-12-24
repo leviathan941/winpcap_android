@@ -86,12 +86,12 @@ int i;
 				if ( (address != NULL) && (i < MAX_ACTIVE_LIST) )
 				{
 					port = strtok(NULL, RPCAP_HOSTLIST_SEP);
-					snprintf(activelist[i].address, MAX_LINE, address);
+					snprintf(activelist[i].address, MAX_LINE, "%s", address);
 
 					if (strcmp(port, "DEFAULT") == 0) // the user choose a custom port
-						snprintf(activelist[i].port, MAX_LINE, RPCAP_DEFAULT_NETPORT_ACTIVE);
+						snprintf(activelist[i].port, MAX_LINE, "%s", RPCAP_DEFAULT_NETPORT_ACTIVE);
 					else
-						snprintf(activelist[i].port, MAX_LINE, port);
+						snprintf(activelist[i].port, MAX_LINE, "%s", port);
 
 					activelist[i].address[MAX_LINE] = 0;
 					activelist[i].port[MAX_LINE] = 0;
@@ -122,7 +122,7 @@ int i;
 			}
 		}
 
-		// clear the remaining fields of the active list 
+		// clear the remaining fields of the active list
 		while (i < MAX_ACTIVE_LIST)
 		{
 			activelist[i].address[0] = 0;
@@ -160,7 +160,7 @@ FILE *fp;
 
 		strncpy(temphostlist, hostlist, MAX_HOST_LIST);
 		temphostlist[MAX_HOST_LIST]= 0;
-	
+
 		token= strtok(temphostlist, RPCAP_HOSTLIST_SEP);
 		while( token != NULL )
 		{

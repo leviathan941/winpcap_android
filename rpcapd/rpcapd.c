@@ -2,32 +2,32 @@
  * Copyright (c) 2002 - 2003
  * NetGroup, Politecnico di Torino (Italy)
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
- * 
- * 1. Redistributions of source code must retain the above copyright 
+ *
+ * 1. Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright 
- * notice, this list of conditions and the following disclaimer in the 
- * documentation and/or other materials provided with the distribution. 
- * 3. Neither the name of the Politecnico di Torino nor the names of its 
- * contributors may be used to endorse or promote products derived from 
- * this software without specific prior written permission. 
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Politecnico di Torino nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
 
@@ -110,7 +110,7 @@ void printusage()
   	"      specified from the command line are ignored\n"
     "  -h: print this help screen\n\n";
 
-	printf(usagetext);
+	printf("%s", usagetext);
 }
 
 
@@ -186,18 +186,18 @@ char errbuf[PCAP_ERRBUF_SIZE + 1];	// keeps the error string, prior to be printe
 				{
 					tmpport= strtok(NULL, RPCAP_HOSTLIST_SEP);
 
-					snprintf(activelist[i].address, MAX_LINE, tmpaddress);
-					
+					snprintf(activelist[i].address, MAX_LINE, "%s", tmpaddress);
+
 					if ( (tmpport == NULL) || (strcmp(tmpport, "DEFAULT") == 0) ) // the user choose a custom port
-						snprintf(activelist[i].port, MAX_LINE, RPCAP_DEFAULT_NETPORT_ACTIVE);
+						snprintf(activelist[i].port, MAX_LINE, "%s", RPCAP_DEFAULT_NETPORT_ACTIVE);
 					else
-						snprintf(activelist[i].port, MAX_LINE, tmpport);
+						snprintf(activelist[i].port, MAX_LINE, "%s", tmpport);
 
 					tmpaddress = strtok(NULL, RPCAP_HOSTLIST_SEP);
 
 					i++;
 				}
-				
+
 				if (i > MAX_ACTIVE_LIST)
 					SOCK_ASSERT("Only MAX_ACTIVE_LIST active connections are currently supported.", 1);
 
@@ -248,7 +248,7 @@ char errbuf[PCAP_ERRBUF_SIZE + 1];	// keeps the error string, prior to be printe
 		// First child continues
 		// Set daemon mode
 		setsid();
-		
+
 		// generated under unix with 'kill -HUP', needed to reload the configuration
 		signal(SIGHUP, fileconf_read);
 
@@ -319,11 +319,11 @@ int i;
 	while ( (activelist[i].address[0] != 0) && (i < MAX_ACTIVE_LIST) )
 	{
 		activelist[i].ai_family= mainhints.ai_family;
-		
+
 #ifdef WIN32
 		/* GV we need this to create the thread as detached. */
 		/* GV otherwise, the thread handle is not destroyed  */
-		pthread_attr_init(&detachedAttribute); 
+		pthread_attr_init(&detachedAttribute);
 		pthread_attr_setdetachstate(&detachedAttribute, PTHREAD_CREATE_DETACHED);
 
 		if ( pthread_create( &threadId, &detachedAttribute, (void *) &main_active, (void *) &activelist[i]) )
@@ -344,7 +344,7 @@ int i;
 	}
 
 	/*
-		The code that manages the active connections is not blocking; 
+		The code that manages the active connections is not blocking;
 		vice versa, the code that manages the passive connection is blocking.
 		So, if the user do not want to run in passive mode, we have to block
 		the main thread here, otherwise the program ends and all threads
@@ -391,7 +391,7 @@ int i;
 #ifdef WIN32
 			/* GV we need this to create the thread as detached. */
 			/* GV otherwise, the thread handle is not destroyed  */
-			pthread_attr_init(&detachedAttribute); 
+			pthread_attr_init(&detachedAttribute);
 			pthread_attr_setdetachstate(&detachedAttribute, PTHREAD_CREATE_DETACHED);
 
 			if ( pthread_create( &threadId, &detachedAttribute, (void *) &main_passive, (void *) socktemp ) )
@@ -432,7 +432,7 @@ int i;
 	It is not called when we are running as a daemon on UNIX, since
 	we do not define a signal in order to terminate gracefully the daemon.
 
-	This function makes a fast cleanup (it does not clean everything, as 
+	This function makes a fast cleanup (it does not clean everything, as
 	you can see from the fact that it uses kill() on UNIX), closes
 	the main socket, free winsock resources (on Win32) and exits the
 	program.
@@ -448,7 +448,7 @@ void main_cleanup(int sign)
 	SOCK_ASSERT(PROGRAM_NAME " is closing.\n", 1);
 
 	// FULVIO (bug)
-	// Here we close only the latest 'sockmain' created; if we opened more than one waiting sockets, 
+	// Here we close only the latest 'sockmain' created; if we opened more than one waiting sockets,
 	// only the latest one is closed correctly.
 	if (sockmain)
 		closesocket(sockmain);
@@ -456,9 +456,9 @@ void main_cleanup(int sign)
 
 	/*
 		This code is executed under the following conditions:
-		- SIGTERM: we're under UNIX, and the user kills us with 'kill -15' 
+		- SIGTERM: we're under UNIX, and the user kills us with 'kill -15'
 		(no matter is we're a daemon or in a console mode)
-		- SIGINT: we're in console mode and the user sends us a Ctrl+C 
+		- SIGINT: we're in console mode and the user sends us a Ctrl+C
 		(SIGINT signal), no matter if we're UNIX or Win32
 
 		In all these cases, we have to terminate the program.
@@ -503,7 +503,7 @@ int stat;
 	It must be in a separate function because:
 	- if we're in 'console' mode, we have to put the main thread waiting for a Ctrl+C
 	(in order to be able to stop everything)
-	- if we're in daemon mode, the main program must terminate and a new child must be 
+	- if we're in daemon mode, the main program must terminate and a new child must be
 	created in order to create the daemon
 
 	\param ptr: it keeps the main socket handler (what's called 'sockmain' in the main() ), that
@@ -543,7 +543,7 @@ SOCKET sockmain;
 		fromlen = sizeof(struct sockaddr_storage);
 
 		sockctrl= accept(sockmain, (struct sockaddr *) &from, &fromlen);
-		
+
 		if (sockctrl == -1)
 		{
 			// The accept() call can return this error when a signal is catched
@@ -556,7 +556,7 @@ SOCKET sockmain;
 #endif
 				continue;
 
-			// Don't check for errors here, since the error can be due to the fact that the thread 
+			// Don't check for errors here, since the error can be due to the fact that the thread
 			// has been killed
 			sock_geterror("accept(): ", errbuf, PCAP_ERRBUF_SIZE);
 			SOCK_ASSERT(errbuf, 1);
@@ -588,7 +588,7 @@ SOCKET sockmain;
 
 		/* GV we need this to create the thread as detached. */
 		/* GV otherwise, the thread handle is not destroyed  */
-		pthread_attr_init(&detachedAttribute); 
+		pthread_attr_init(&detachedAttribute);
 		pthread_attr_setdetachstate(&detachedAttribute, PTHREAD_CREATE_DETACHED);
 		if ( pthread_create( &threadId, &detachedAttribute, (void *) &daemon_serviceloop, (void *) pars) )
 		{
@@ -657,13 +657,13 @@ struct daemon_slpars *pars;			// parameters needed by the daemon_serviceloop()
 
 	// Prepare to open a new server socket
 	memset(&hints, 0, sizeof(struct addrinfo));
-									// WARNING Currently it supports only ONE socket family among IPv4 and IPv6 
+									// WARNING Currently it supports only ONE socket family among IPv4 and IPv6
 	hints.ai_family = AF_INET;		// PF_UNSPEC to have both IPv4 and IPv6 server
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_family= activepars->ai_family;
 
 	snprintf(errbuf, PCAP_ERRBUF_SIZE, "Connecting to host %s, port %s, using protocol %s",
-			activepars->address, activepars->port, (hints.ai_family == AF_INET) ? "IPv4": 
+			activepars->address, activepars->port, (hints.ai_family == AF_INET) ? "IPv4":
 			(hints.ai_family == AF_INET6) ? "IPv6" : "Unspecified");
 	SOCK_ASSERT(errbuf, 1);
 
@@ -686,7 +686,7 @@ struct daemon_slpars *pars;			// parameters needed by the daemon_serviceloop()
 			SOCK_ASSERT(errbuf, 1);
 
 			snprintf(errbuf, PCAP_ERRBUF_SIZE, "Error connecting to host %s, port %s, using protocol %s",
-					activepars->address, activepars->port, (hints.ai_family == AF_INET) ? "IPv4": 
+					activepars->address, activepars->port, (hints.ai_family == AF_INET) ? "IPv4":
 					(hints.ai_family == AF_INET6) ? "IPv6" : "Unspecified" );
 
 			SOCK_ASSERT(errbuf, 1);
@@ -720,4 +720,3 @@ struct daemon_slpars *pars;			// parameters needed by the daemon_serviceloop()
 			break;
 	}
 }
-
