@@ -35,7 +35,7 @@
 
 #include "thread_cancel.h"
 
-int set_thread_cancelable()
+int set_thread_cancellable()
 {
 	return pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL)
 		|| pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL) ? -1 : 0;

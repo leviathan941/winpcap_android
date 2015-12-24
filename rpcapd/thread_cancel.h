@@ -34,24 +34,24 @@
 #include <pthread.h>
 
 /*!
-	\brief Makes current thread cancelable.
+	\brief Makes current thread cancellable.
 
-	'cancel_thread' can be called for a cancelable thread to cancel it.
+	'cancel_thread' can be called for a cancellable thread to cancel it.
 
-	\return '0' if thread successfully set to cancelable, '-1' if an error occurred.
+	\return '0' if thread successfully set to cancellable, '-1' if an error occurred.
 */
-int set_thread_cancelable();
+int set_thread_cancellable();
 
 /*!
-	\brief Cancels a cancelable thread.
+	\brief Cancels a cancellable thread.
 
-	NOTE: Call this function for cancelable threads only! If it's called for non-cancelable
+	NOTE: Call this function for cancellable threads only! If it's called for non-cancellable
 	thread, return value means nothing and cannot be used to check for result of the cancel
 	operation.
 
 	\param thread: Thread ID to be cancelled.
 
-	\return '0' if the cancelable thread has been cancelled, a non-zero number if an error occurred.
+	\return '0' if the cancellable thread has been cancelled, a non-zero number if an error occurred.
 */
 int cancel_thread(pthread_t thread);
 

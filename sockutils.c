@@ -2,32 +2,36 @@
  * Copyright (c) 2002 - 2003
  * NetGroup, Politecnico di Torino (Italy)
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ *
+ * Copyright (c) 2015 Alexey Kuzin <amkuzink@gmail.com>.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
- * 
- * 1. Redistributions of source code must retain the above copyright 
+ *
+ * 1. Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright 
- * notice, this list of conditions and the following disclaimer in the 
- * documentation and/or other materials provided with the distribution. 
- * 3. Neither the name of the Politecnico di Torino nor the names of its 
- * contributors may be used to endorse or promote products derived from 
- * this software without specific prior written permission. 
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Politecnico di Torino, Winpcap Android nor
+ * the names of its contributors may be used to endorse or promote
+ * products derived from this software without specific prior written
+ * permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
 
@@ -90,7 +94,10 @@
 
 int sock_ismcastaddr(const struct sockaddr *saddr);
 
-
+#ifdef android
+static int contains_family(const struct addrinfo *addrinfo, int ai_family);
+static int get_ip4_mapped_ip6(const struct addrinfo *ip4addrinfo, struct addrinfo **ip6addrinfo);
+#endif //android
 
 
 
@@ -111,7 +118,7 @@ int sock_ismcastaddr(const struct sockaddr *saddr);
 	\param caller: a pointer to a user-allocated string which contains a message that has
 	to be printed *before* the true error message. It could be, for example, 'this error
 	comes from the recv() call at line 31'. It may be NULL.
-	
+
 	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
 	error message. This buffer has to be at least 'errbuflen' in length.
 	It can be NULL; in this case the error cannot be printed.
@@ -127,14 +134,14 @@ void sock_geterror(const char *caller, char *errbuf, int errbuflen)
 	int retval;
 	int code;
 	TCHAR message[SOCK_ERRBUF_SIZE];	/* It will be char (if we're using ascii) or wchar_t (if we're using unicode) */
-	
+
 		code= GetLastError();
-	
+
 		retval= FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS |
 	                  FORMAT_MESSAGE_MAX_WIDTH_MASK,
 	                  NULL, code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 	                  message, sizeof(message) / sizeof(TCHAR), NULL);
-	
+
 		if (retval == 0)
 		{
 			if (errbuf)
@@ -149,7 +156,7 @@ void sock_geterror(const char *caller, char *errbuf, int errbuflen)
 
 			return;
 		}
-	
+
 		if (errbuf)
 		{
 			if ( (caller) && (*caller) )
@@ -163,7 +170,7 @@ void sock_geterror(const char *caller, char *errbuf, int errbuflen)
 
 #else
 	char *message;
-	
+
 		message= strerror(errno);
 
 		if (errbuf)
@@ -250,7 +257,7 @@ void sock_cleanup()
 /*!
 	\brief It checks if the sockaddr variable contains a multicast address.
 
-	\return '0' if the address is multicast, '-1' if it is not. 
+	\return '0' if the address is multicast, '-1' if it is not.
 */
 int sock_ismcastaddr(const struct sockaddr *saddr)
 {
@@ -335,7 +342,7 @@ SOCKET sock;
 				}
 				return -1;
 			}
-		} 
+		}
 #endif
 
 		// WARNING: if the address is a mcast one, I should place the proper Win32 code here
@@ -372,7 +379,7 @@ SOCKET sock;
 		// to connect to is unavailable in IPv6, so we have to try in IPv4 as well
 		while (tempaddrinfo)
 		{
-			
+
 			if (connect(sock, tempaddrinfo->ai_addr, tempaddrinfo->ai_addrlen) == -1)
 			{
 			size_t msglen;
@@ -405,7 +412,7 @@ SOCKET sock;
 
 		// Check how we exit from the previous loop
 		// If tempaddrinfo is equal to NULL, it means that all the connect() failed.
-		if (tempaddrinfo == NULL) 
+		if (tempaddrinfo == NULL)
 		{
 			closesocket(sock);
 			return -1;
@@ -438,8 +445,8 @@ SOCKET sock;
 */
 int sock_close(SOCKET sock, char *errbuf, int errbuflen)
 {
-	// SHUT_WR: subsequent calls to the send function are disallowed. 
-	// For TCP sockets, a FIN will be sent after all data is sent and 
+	// SHUT_WR: subsequent calls to the send function are disallowed.
+	// For TCP sockets, a FIN will be sent after all data is sent and
 	// acknowledged by the Server.
 	if (shutdown(sock, SHUT_WR) )
 	{
@@ -471,7 +478,7 @@ int sock_close(SOCKET sock, char *errbuf, int errbuflen)
 
 	\param port: a pointer to a user-allocated buffer containing the network port to use.
 
-	\param hints: an addrinfo variable (passed by reference) containing the flags needed to create the 
+	\param hints: an addrinfo variable (passed by reference) containing the flags needed to create the
 	addrinfo structure appropriately.
 
 	\param addrinfo: it represents the true returning value. This is a pointer to an addrinfo variable
@@ -486,7 +493,7 @@ int sock_close(SOCKET sock, char *errbuf, int errbuflen)
 	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return '0' if everything is fine, '-1' if some errors occurred. The error message is returned
-	in the 'errbuf' variable. The addrinfo variable that has to be used in the following sockets calls is 
+	in the 'errbuf' variable. The addrinfo variable that has to be used in the following sockets calls is
 	returned into the addrinfo parameter.
 
 	\warning The 'addrinfo' variable has to be deleted by the programmer by calling freeaddrinfo() when
@@ -500,7 +507,7 @@ int sock_initaddress(const char *address, const char *port,
 							struct addrinfo *hints, struct addrinfo **addrinfo, char *errbuf, int errbuflen)
 {
 int retval;
-	
+
 	retval = getaddrinfo(address, port, hints, addrinfo);
 	if (retval != 0)
 	{
@@ -554,9 +561,9 @@ int retval;
 	\brief It sends the amount of data contained into 'buffer' on the given socket.
 
 	This function basically calls the send() socket function and it checks that all
-	the data specified in 'buffer' (of size 'size') will be sent. If an error occurs, 
+	the data specified in 'buffer' (of size 'size') will be sent. If an error occurs,
 	it writes the error message into 'errbuf'.
-	In case the socket buffer does not have enough space, it loops until all data 
+	In case the socket buffer does not have enough space, it loops until all data
 	has been sent.
 
 	\param socket: the connected socket currently opened.
@@ -582,9 +589,9 @@ int nsent;
 send:
 #ifdef linux
 /*
-	Another pain... in Linux there's this flag 
+	Another pain... in Linux there's this flag
 	MSG_NOSIGNAL
-		Requests not to send SIGPIPE on errors on stream-oriented 
+		Requests not to send SIGPIPE on errors on stream-oriented
 		sockets when the other end breaks the connection.
 		The EPIPE error is still returned.
 */
@@ -615,13 +622,13 @@ send:
 	and it checks for buffer overflows.
 
 	This function basically copies 'size' bytes of data contained into 'buffer'
-	into 'tempbuf', starting at offset 'offset'. Before that, it checks that the 
-	resulting buffer will not be larger	than 'totsize'. Finally, it updates 
+	into 'tempbuf', starting at offset 'offset'. Before that, it checks that the
+	resulting buffer will not be larger	than 'totsize'. Finally, it updates
 	the 'offset' variable in order to point to the first empty location of the buffer.
 
 	In case the function is called with 'checkonly' equal to 1, it does not copy
 	the data into the buffer. It only checks for buffer overflows and it updates the
-	'offset' variable. This mode can be useful when the buffer already contains the 
+	'offset' variable. This mode can be useful when the buffer already contains the
 	data (maybe because the producer writes directly into the target buffer), so
 	only the buffer overflow check has to be made.
 	In this case, both 'buffer' and 'tempbuf' can be NULL values.
@@ -655,7 +662,7 @@ send:
 	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
 	\return '0' if everything is fine, '-1' if some errors occurred. The error message
-	is returned in the 'errbuf' variable. When the function returns, 'tempbuf' will 
+	is returned in the 'errbuf' variable. When the function returns, 'tempbuf' will
 	have the new string appended, and 'offset' will keep the length of that buffer.
 	In case of 'checkonly == 1', data is not copied, but 'offset' is updated in any case.
 
@@ -696,7 +703,7 @@ int sock_bufferize(const char *buffer, int size, char *tempbuf, int *offset, int
 	error occurred. If that happens, it writes the error message into 'errbuf'.
 
 	This function changes its behaviour according to the 'receiveall' flag: if we
-	want to receive exactly 'size' byte, it loops on the recv()	until all the requested 
+	want to receive exactly 'size' byte, it loops on the recv()	until all the requested
 	data is arrived. Otherwise, it returns the data currently available.
 
 	In case the socket does not have enough data available, it cycles on the recv()
@@ -710,8 +717,8 @@ int sock_bufferize(const char *buffer, int size, char *tempbuf, int *offset, int
 	\param size: size of the allocated buffer. WARNING: this indicates the number of bytes
 	that we are expecting to be read.
 
-	\param receiveall: if '0' (or SOCK_RECEIVEALL_NO), it returns as soon as some data 
-	is ready; otherwise, (or SOCK_RECEIVEALL_YES) it waits until 'size' data has been 
+	\param receiveall: if '0' (or SOCK_RECEIVEALL_NO), it returns as soon as some data
+	is ready; otherwise, (or SOCK_RECEIVEALL_YES) it waits until 'size' data has been
 	received (in case the socket does not have enough data available).
 
 	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
@@ -757,7 +764,7 @@ again:
 		return -1;
 	}
 
-	// If we want to return as soon as some data has been received, 
+	// If we want to return as soon as some data has been received,
 	// let's do the job
 	if (!receiveall)
 		return nread;
@@ -776,7 +783,7 @@ again:
 	\brief It discards N bytes that are currently waiting to be read on the current socket.
 
 	This function is useful in case we receive a message we cannot undestand (e.g.
-	wrong version number when receiving a network packet), so that we have to discard all 
+	wrong version number when receiving a network packet), so that we have to discard all
 	data before reading a new message.
 
 	This function will read 'size' bytes from the socket and discard them.
@@ -805,7 +812,7 @@ char buffer[TEMP_BUF_SIZE];		// network buffer, to be used when the message is d
 
 	// A static allocation avoids the need of a 'malloc()' each time we want to discard a message
 	// Our feeling is that a buffer if 32KB is enough for most of the application;
-	// in case this is not enough, the "while" loop discards the message by calling the 
+	// in case this is not enough, the "while" loop discards the message by calling the
 	// sockrecv() several times.
 	// We do not want to create a bigger variable because this causes the program to exit on
 	// some platforms (e.g. BSD)
@@ -838,12 +845,12 @@ char buffer[TEMP_BUF_SIZE];		// network buffer, to be used when the message is d
 
 	This function is useful after an accept() call in order to check if the connecting
 	host is allowed to connect to me. To do that, we have a buffer that keeps the list of the
-	allowed host; this function checks the sockaddr_storage structure of the connecting host 
+	allowed host; this function checks the sockaddr_storage structure of the connecting host
 	against this host list, and it returns '0' is the host is included in this list.
 
 	\param hostlist: pointer to a string that contains the list of the allowed host.
 
-	\param sep: a string that keeps the separators used between the hosts (for example the 
+	\param sep: a string that keeps the separators used between the hosts (for example the
 	space character) in the host list.
 
 	\param from: a sockaddr_storage structure, as it is returned by the accept() call.
@@ -866,9 +873,9 @@ int sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 	// checks if the connecting host is among the ones allowed
 	if ( (hostlist) && (hostlist[0]) )
 	{
-	char *token;					// temp, needed to separate items into the hostlist
-	struct addrinfo *addrinfo, *ai_next;
-	char *temphostlist;
+		char *token;					// temp, needed to separate items into the hostlist
+		struct addrinfo *addrinfo, *ai_next;
+		char *temphostlist;
 
 		temphostlist= (char *) malloc (strlen(hostlist) + 1);
 		if (temphostlist == NULL)
@@ -876,7 +883,7 @@ int sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 			sock_geterror("sock_check_hostlist(), malloc() failed", errbuf, errbuflen);
 			return -2;
 		}
-		
+
 		// The problem is that strtok modifies the original variable by putting '0' at the end of each token
 		// So, we have to create a new temporary string in which the original content is kept
 		strcpy(temphostlist, hostlist);
@@ -888,14 +895,14 @@ int sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 
 		while( token != NULL )
 		{
-		struct addrinfo hints;
-		int retval;
+			struct addrinfo hints;
+			int retval;
 
 			addrinfo = NULL;
 			memset(&hints, 0, sizeof (struct addrinfo) );
 			hints.ai_family = PF_UNSPEC;
 			hints.ai_socktype= SOCK_STREAM;
-	
+
 			retval = getaddrinfo(token, "0", &hints, &addrinfo);
 			if (retval != 0)
 			{
@@ -911,6 +918,29 @@ int sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 				token = strtok( NULL, sep);
 				continue;
 			}
+
+#ifdef android
+			int contains_from_family = addrinfo ? contains_family(addrinfo, from->ss_family) : 0;
+
+			// There is a case, when IPv6 socket is created, but IPv4 ip-address is specified
+			// as allowed host. It is possible in this case that getaddrinfo() returns only IPv4
+			// addrinfo on Android.
+			// Workaround is to convert IPv4 addrinfo to IPv4-mapped-IPv6 addrinfo.
+			// This is done manually, because AI_V4MAPPED flag is not supported by bionic libc.
+			// The reverse case is not supported, because no generic IPv6-address can be
+			// converted to IPv4-address.
+			if (!contains_from_family && from->ss_family == AF_INET6)
+			{
+				struct addrinfo *ip6addrinfo = NULL;
+				if (!get_ip4_mapped_ip6(addrinfo, &ip6addrinfo) && ip6addrinfo)
+				{
+					// Got mapped IPv6 addrinfo, put it to the head of the linked list.
+					ip6addrinfo->ai_next = addrinfo;
+					addrinfo = ip6addrinfo;
+					contains_from_family = 1;
+				}
+			}
+#endif // android
 
 			// ai_next is required to preserve the content of addrinfo, in order to deallocate it properly
 			ai_next= addrinfo;
@@ -966,7 +996,7 @@ int sock_check_hostlist(char *hostlist, const char *sep, struct sockaddr_storage
 
 	This function will return '0' if the two addresses matches, '-1' if not.
 
-	\param first: a sockaddr_storage structure, (for example the one that is returned by an 
+	\param first: a sockaddr_storage structure, (for example the one that is returned by an
 	accept() call), containing the first address to compare.
 
 	\param second: a sockaddr_storage structure containing the second address to compare.
@@ -979,14 +1009,14 @@ int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second
 	{
 		if (first->ss_family == AF_INET)
 		{
-			if (memcmp(		&(((struct sockaddr_in *) first)->sin_addr), 
+			if (memcmp(		&(((struct sockaddr_in *) first)->sin_addr),
 							&(((struct sockaddr_in *) second)->sin_addr),
 							sizeof(struct in_addr) ) == 0)
 								return 0;
 		}
 		else // address family is AF_INET6
 		{
-			if (memcmp(		&(((struct sockaddr_in6 *) first)->sin6_addr), 
+			if (memcmp(		&(((struct sockaddr_in6 *) first)->sin6_addr),
 							&(((struct sockaddr_in6 *) second)->sin6_addr),
 							sizeof(struct in6_addr) ) == 0)
 								return 0;
@@ -1036,7 +1066,7 @@ int sock_cmpaddr(struct sockaddr_storage *first, struct sockaddr_storage *second
 	The address and port corresponding are returned back in the buffers 'address' and 'port'.
 	In any case, the returned strings are '0' terminated.
 
-	\warning If the socket is using a connectionless protocol, the address may not be available 
+	\warning If the socket is using a connectionless protocol, the address may not be available
 	until I/O occurs on the socket.
 */
 int sock_getmyinfo(SOCKET sock, char *address, int addrlen, char *port, int portlen, int flags, char *errbuf, int errbuflen)
@@ -1078,11 +1108,11 @@ socklen_t sockaddrlen;
 
 	The behaviour of this function depends on the parameters we have in the 'Flags' variable, which
 	are the ones allowed in the standard getnameinfo() socket function.
-	
-	\param sockaddr: a 'sockaddr_in' or 'sockaddr_in6' structure containing the address that 
-	need to be translated from network form into the presentation form. This structure must be 
-	zero-ed prior using it, and the address family field must be filled with the proper value. 
-	The user must cast any 'sockaddr_in' or 'sockaddr_in6' structures to 'sockaddr_storage' before 
+
+	\param sockaddr: a 'sockaddr_in' or 'sockaddr_in6' structure containing the address that
+	need to be translated from network form into the presentation form. This structure must be
+	zero-ed prior using it, and the address family field must be filled with the proper value.
+	The user must cast any 'sockaddr_in' or 'sockaddr_in6' structures to 'sockaddr_storage' before
 	calling this function.
 
 	\param address: it contains the address that will be returned by the function. This buffer
@@ -1186,7 +1216,7 @@ int retval;					// Variable that keeps the return value;
 	\param addr_family: a constant which can assume the following values:
 		- 'AF_INET' if we want to ping an IPv4 host
 		- 'AF_INET6' if we want to ping an IPv6 host
-		- 'AF_UNSPEC' if we do not have preferences about the protocol used to ping the host 
+		- 'AF_UNSPEC' if we do not have preferences about the protocol used to ping the host
 
 	\param errbuf: a pointer to an user-allocated buffer that will contain the complete
 	error message. This buffer has to be at least 'errbuflen' in length.
@@ -1195,7 +1225,7 @@ int retval;					// Variable that keeps the return value;
 	\param errbuflen: length of the buffer that will contains the error. The error message cannot be
 	larger than 'errbuflen - 1' because the last char is reserved for the string terminator.
 
-	\return '-1' if the translation succeded, '-2' if there was some non critical error, '0' 
+	\return '-1' if the translation succeded, '-2' if there was some non critical error, '0'
 	otherwise. In case it fails, the content of the SockAddr variable remains unchanged.
 	A 'non critical error' can occur in case the 'Address' is a literal name, which can be mapped
 	to several network addresses (e.g. 'foo.bar.com' => '10.2.2.2' and '10.2.2.3'). In this case
@@ -1238,4 +1268,70 @@ struct addrinfo hints;
 	return -1;
 }
 
+#ifdef android
+/*!
+	\brief Checks whether the passed addrinfo contains the specified IP-address family or not.
 
+	\param addrinfo: linked list to be checked for the content of the specified address family.
+
+	\param addr_family: address family to be searched inside the linked list.
+
+	\return '1' if addrinfo with the specified address family has been found in the linked list,
+	'0' otherwise.
+*/
+static int contains_family(const struct addrinfo *addrinfo, int addr_family)
+{
+	for (; addrinfo != NULL; addrinfo = addrinfo->ai_next)
+	{
+		if (addrinfo->ai_family == addr_family)
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+/*!
+	\brief Converts IPv4 addrinfo to IPv4-mapped-IPv6 addrinfo structure.
+
+	\param ip4addrinfo: IPv4 addrinfo structure to be converted. It will not be changed.
+
+	\param ip6addrinfo: output parameter containing result of the function invocation -
+	IPv4-mapped-IPv6 address.
+
+	\return '0' if IPv6 based on the passed IPv4 has been created, '-1' otherwise.
+
+	\warning ip6addrinfo structure MUST be deallocated by the user.
+*/
+static int get_ip4_mapped_ip6(const struct addrinfo *ip4addrinfo, struct addrinfo **ip6addrinfo)
+{
+	const struct sockaddr_in *ip4addr = (const struct sockaddr_in *) ip4addrinfo->ai_addr;
+
+	char ip4_plain[INET_ADDRSTRLEN];
+	if (!inet_ntop(AF_INET, &ip4addr->sin_addr, ip4_plain, INET_ADDRSTRLEN))
+	{
+		return -1;
+	}
+
+	char ip6_plain[INET6_ADDRSTRLEN];
+	if (snprintf(ip6_plain, INET6_ADDRSTRLEN, "::ffff:%s", ip4_plain) < 0)
+	{
+		return -1;
+	}
+
+	struct addrinfo hints;
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_INET6;
+	hints.ai_socktype = ip4addrinfo->ai_socktype;
+
+	const unsigned port_buf_size = 6;
+	char port[port_buf_size];
+	if (snprintf(port, port_buf_size, "%d", ip4addr->sin_port) < 0)
+	{
+		return -1;
+	}
+
+	return getaddrinfo(ip6_plain, port, &hints, ip6addrinfo) ? -1 : 0;
+}
+#endif // android

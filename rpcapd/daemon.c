@@ -123,7 +123,7 @@ int retval;							// select() return value
 	if (! pars->isactive)
 	{
 		// Modify thread params so that it can be killed at any time
-		if (set_thread_cancelable())
+		if (set_thread_cancellable())
 			goto end;
 	}
 
@@ -1448,7 +1448,7 @@ int sendbufidx;						// index which keeps the number of bytes currently buffered
 	}
 
 	// Modify thread params so that it can be killed at any time
-	if (set_thread_cancelable())
+	if (set_thread_cancellable())
 		goto error;
 
 	// Retrieve the packets

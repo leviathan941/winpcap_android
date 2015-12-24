@@ -45,7 +45,7 @@ static void thread_cancel_signal_handler(int sig_num)
 	}
 }
 
-int set_thread_cancelable()
+int set_thread_cancellable()
 {
 	struct sigaction action;
 	memset(&action, 0, sizeof(action));
