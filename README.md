@@ -1,2 +1,2 @@
-# winpcap_android
-Winpcap port for Android
+# Winpcap Android
+Winpcap and Rpcapd port for Android.
