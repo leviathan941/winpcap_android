@@ -51,7 +51,7 @@ LOCAL_SRC_FILES := \
 	pcap-remote.c \
 	sockutils.c
 
-LOCAL_CFLAGS :=-O2 -fPIC
+LOCAL_CFLAGS := -O2 -fPIC
 LOCAL_CFLAGS += -DHAVE_CONFIG_H -D_U_="__attribute__((unused))" -Dlinux -D__GLIBC__ -D_GNU_SOURCE \
 	-DHAVE_REMOTE
 

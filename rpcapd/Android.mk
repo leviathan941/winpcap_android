@@ -41,7 +41,7 @@ LOCAL_SRC_FILES := \
 	../pcap-new.c
 
 LOCAL_CFLAGS := -O2
-LOCAL_CFLAGS += -D_U_="__attribute__((unused))" -DHAVE_REMOTE -DHAVE_SNPRINTF
+LOCAL_CFLAGS += -D_U_="__attribute__((unused))" -Dandroid -DHAVE_REMOTE -DHAVE_SNPRINTF
 
 LOCAL_C_INCLUDES += \
 	device/ascom/external/winpcap

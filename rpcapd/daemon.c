@@ -2,32 +2,32 @@
  * Copyright (c) 2002 - 2003
  * NetGroup, Politecnico di Torino (Italy)
  * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without 
- * modification, are permitted provided that the following conditions 
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
  * are met:
- * 
- * 1. Redistributions of source code must retain the above copyright 
+ *
+ * 1. Redistributions of source code must retain the above copyright
  * notice, this list of conditions and the following disclaimer.
- * 2. Redistributions in binary form must reproduce the above copyright 
- * notice, this list of conditions and the following disclaimer in the 
- * documentation and/or other materials provided with the distribution. 
- * 3. Neither the name of the Politecnico di Torino nor the names of its 
- * contributors may be used to endorse or promote products derived from 
- * this software without specific prior written permission. 
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR 
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY 
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * 2. Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the Politecnico di Torino nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  */
 
 #include <pcap.h>		// for libpcap/WinPcap calls
@@ -47,7 +47,7 @@
 #include <pwd.h>		// for password management
 #endif
 
-#ifdef linux
+#if defined(linux) && !defined(android)
 #include <shadow.h>		// for password management
 #endif
 
@@ -60,7 +60,7 @@ int daemon_AuthUserPwd(char *username, char *password, char *errbuf);
 int daemon_findalldevs(SOCKET sockctrl, char *errbuf);
 
 int daemon_opensource(SOCKET sockctrl, char *source, int srclen, uint32 plen, char *errbuf);
-pcap_t *daemon_startcapture(SOCKET sockctrl, pthread_t *threaddata, char *source, int active, 
+pcap_t *daemon_startcapture(SOCKET sockctrl, pthread_t *threaddata, char *source, int active,
 							struct rpcap_sampling *samp_param, uint32 plen, char *errbuf);
 int daemon_endcapture(pcap_t *fp, pthread_t *threaddata, char *errbuf);
 
@@ -68,7 +68,7 @@ int daemon_updatefilter(pcap_t *fp, uint32 plen);
 int daemon_unpackapplyfilter(pcap_t *fp, unsigned int *nread, int *plen, char *errbuf);
 
 int daemon_getstats(pcap_t *fp);
-int daemon_getstatsnopcap(SOCKET sockctrl, unsigned int ifdrops, unsigned int ifrecv, 
+int daemon_getstatsnopcap(SOCKET sockctrl, unsigned int ifdrops, unsigned int ifrecv,
 						  unsigned int krnldrop, unsigned int svrcapt, char *errbuf);
 
 int daemon_setsampling(SOCKET sockctrl, struct rpcap_sampling *samp_param, int plen, char *errbuf);
@@ -89,7 +89,7 @@ void *daemon_thrdatamain(void *ptr);
 
 	\param ptr: a void pointer that keeps the reference of the 'pthread_chain'
 	value corrisponding to this thread. This variable is casted into a 'pthread_chain'
-	value in order to retrieve the socket we're currently using, the therad ID, and 
+	value in order to retrieve the socket we're currently using, the therad ID, and
 	some pointers to the previous and next elements into this struct.
 
 	\return None.
@@ -115,7 +115,7 @@ int retval;							// select() return value
 
 
 	pars= (struct daemon_slpars *) ptr;
-	
+
 	*errbuf= 0;	// Initialize errbuf
 
 	// If we're in active mode, this is not a separate thread
@@ -136,7 +136,7 @@ auth_again:
 		// We do not have to block here
 		tv.tv_sec = RPCAP_TIMEOUT_INIT;
 		tv.tv_usec = 0;
-		
+
 		FD_SET(pars->sockctrl, &rfds);
 
 		retval = select(pars->sockctrl + 1, &rfds, NULL, NULL, &tv);
@@ -164,7 +164,7 @@ auth_again:
 		// the other user requested to close the connection
 		// It can be also the case of 'active mode', in which this host is not
 		// allowed to connect to the other peer; in that case, it drops down the connection
-		if (retval == -3) 
+		if (retval == -3)
 			goto end;
 
 		// It can be an authentication failure or an unrecoverable error
@@ -207,7 +207,7 @@ auth_again:
 			// We do not have to block here
 			tv.tv_sec = RPCAP_TIMEOUT_RUNTIME;
 			tv.tv_usec = 0;
-			
+
 			FD_SET(pars->sockctrl, &rfds);
 
 			retval = select(pars->sockctrl + 1, &rfds, NULL, NULL, &tv);
@@ -375,7 +375,7 @@ auth_again:
 			{
 				// signal to the main that the user closed the control connection
 				// This is used only in case of active mode
-				pars->activeclose= 1;	
+				pars->activeclose= 1;
 				SOCK_ASSERT("The other end system asked to close the connection.", 1);
 				goto end;
 				break;
@@ -424,7 +424,7 @@ end:
 	{
 		if (pars->sockctrl)
 			sock_close(pars->sockctrl, NULL, 0);
-		
+
 		free(pars);
 #ifdef WIN32
 		pthread_exit(0);
@@ -437,11 +437,11 @@ end:
 	\brief It checks if the authentication credentials supplied by the user are valid.
 
 	This function is called each time the rpcap daemon starts a new serving thread.
-	It reads the authentication message from the network and it checks that the 
+	It reads the authentication message from the network and it checks that the
 	user information are valid.
 
 	\param sockctrl: the socket if of the control connection.
-	
+
 	\param nullAuthAllowed: '1' if the NULL authentication is allowed.
 
 	\param errbuf: a user-allocated buffer in which the error message (if one) has to be written.
@@ -497,7 +497,7 @@ int retcode;						// the value we have to return to the caller
 						retcode= -1;
 						goto error;
 					}
-				}		
+				}
 				return -3;
 			};
 
@@ -662,7 +662,7 @@ int daemon_AuthUserPwd(char *username, char *password, char *errbuf)
 */
 
 	struct passwd *user;
-#ifdef linux
+#if defined(linux) && !defined(android)
 	struct spwd *usersp;
 #endif
 
@@ -673,14 +673,14 @@ int daemon_AuthUserPwd(char *username, char *password, char *errbuf)
 		return -1;
 	}
 
-#ifdef linux
+#if defined(linux) && !defined(android)
 	// This call is needed to get the password; otherwise 'x' is returned
 	if ((usersp= getspnam(username)) == NULL)
 	{
 		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Authentication failed: no such user");
 		return -1;
 	}
-	
+
 	if (strcmp(usersp->sp_pwdp, (char *) crypt(password, usersp->sp_pwdp) ) != 0)
 	{
 		snprintf(errbuf, PCAP_ERRBUF_SIZE, "Authentication failed: password incorrect");
@@ -741,7 +741,7 @@ uint16 nif= 0;								// counts the number of interface listed
 		rpcap_senderror(sockctrl,
 			"No interfaces found! Make sure libpcap/WinPcap is properly installed"
 			" and you have the right to access to the remote device.",
-			PCAP_ERR_NOREMOTEIF, 
+			PCAP_ERR_NOREMOTEIF,
 			errbuf);
 		return -1;
 	}
@@ -763,7 +763,7 @@ uint16 nif= 0;								// counts the number of interface listed
 	}
 
 	// RPCAP findalldevs command
-	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, 
+	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL,
 		&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf, PCAP_ERRBUF_SIZE) == -1)
 		return -1;
 
@@ -796,7 +796,7 @@ uint16 nif= 0;								// counts the number of interface listed
 
 		findalldevs_if->naddr= htons(findalldevs_if->naddr);
 
-		if (sock_bufferize(d->name, lname, sendbuf, &sendbufidx, 
+		if (sock_bufferize(d->name, lname, sendbuf, &sendbufidx,
 			RPCAP_NETBUF_SIZE, SOCKBUF_BUFFERIZE, errbuf, PCAP_ERRBUF_SIZE) == -1)
 			return -1;
 
@@ -810,13 +810,13 @@ uint16 nif= 0;								// counts the number of interface listed
 		struct sockaddr_storage *sockaddr;
 
 			sockaddr= (struct sockaddr_storage *) &sendbuf[sendbufidx];
-			if (sock_bufferize(NULL, sizeof(struct sockaddr_storage), NULL, 
+			if (sock_bufferize(NULL, sizeof(struct sockaddr_storage), NULL,
 				&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf, PCAP_ERRBUF_SIZE) == -1)
 				return -1;
 			daemon_seraddr( (struct sockaddr_storage *) address->addr, sockaddr);
 
 			sockaddr= (struct sockaddr_storage *) &sendbuf[sendbufidx];
-			if (sock_bufferize(NULL, sizeof(struct sockaddr_storage), NULL, 
+			if (sock_bufferize(NULL, sizeof(struct sockaddr_storage), NULL,
 				&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf, PCAP_ERRBUF_SIZE) == -1)
 				return -1;
 			daemon_seraddr( (struct sockaddr_storage *) address->netmask, sockaddr);
@@ -883,9 +883,9 @@ struct rpcap_openreply *openreply;	// open reply message
 
 	// Open the selected device
 	// This is a fake open, since we do that only to get the needed parameters, then we close the device again
-	if ( (fp= pcap_open(source, 
+	if ( (fp= pcap_open(source,
 			1500 /* fake snaplen */,
-			0 /* no promis */, 
+			0 /* no promis */,
 			1000 /* fake timeout */,
 			NULL /* local device, so no auth */,
 			errbuf)) == NULL)
@@ -903,8 +903,8 @@ struct rpcap_openreply *openreply;	// open reply message
 	rpcap_createhdr( (struct rpcap_header *) sendbuf, RPCAP_MSG_OPEN_REPLY, 0, sizeof(struct rpcap_openreply) );
 
 	openreply= (struct rpcap_openreply *) &sendbuf[sendbufidx];
-	
-	if ( sock_bufferize(NULL, sizeof(struct rpcap_openreply), NULL, &sendbufidx, 
+
+	if ( sock_bufferize(NULL, sizeof(struct rpcap_openreply), NULL, &sendbufidx,
 		RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf, PCAP_ERRBUF_SIZE) == -1)
 		goto error;
 
@@ -970,9 +970,9 @@ int serveropen_dp;							// keeps who is going to open the data connection
 	startcapreq.flags= ntohs(startcapreq.flags);
 
 	// Open the selected device
-	if ( (fp= pcap_open(source, 
+	if ( (fp= pcap_open(source,
 			ntohl(startcapreq.snaplen),
-			(startcapreq.flags & RPCAP_STARTCAPREQ_FLAG_PROMISC) ? PCAP_OPENFLAG_PROMISCUOUS : 0 /* local device, other flags not needed */, 
+			(startcapreq.flags & RPCAP_STARTCAPREQ_FLAG_PROMISC) ? PCAP_OPENFLAG_PROMISCUOUS : 0 /* local device, other flags not needed */,
 			ntohl(startcapreq.read_timeout),
 			NULL /* local device, so no auth */,
 			errbuf)) == NULL)
@@ -996,9 +996,9 @@ int serveropen_dp;							// keeps who is going to open the data connection
 	Gets the sockaddr structure referred to the other peer in the ctrl connection
 
 	We need that because:
-	- if we're in passive mode, we need to know the address family we want to use 
+	- if we're in passive mode, we need to know the address family we want to use
 	(the same used for the ctrl socket)
-	- if we're in active mode, we need to know the network address of the other host 
+	- if we're in active mode, we need to know the network address of the other host
 	we want to connect to
 	*/
 	saddrlen = sizeof(struct sockaddr_storage);
@@ -1018,7 +1018,7 @@ int serveropen_dp;							// keeps who is going to open the data connection
 		sprintf(portdata, "%d", ntohs(startcapreq.portdata) );
 
 		// Get the name of the other peer (needed to connect to that specific network address)
-		if (getnameinfo( (struct sockaddr *) &saddr, saddrlen, peerhost, 
+		if (getnameinfo( (struct sockaddr *) &saddr, saddrlen, peerhost,
 				sizeof(peerhost), NULL, 0, NI_NUMERICHOST) )
 		{
 			sock_geterror("getnameinfo(): ", errbuf, PCAP_ERRBUF_SIZE);
@@ -1051,7 +1051,7 @@ int serveropen_dp;							// keeps who is going to open the data connection
 		}
 
 		// Get the local port the system picked up
-		if (getnameinfo( (struct sockaddr *) &saddr, saddrlen, NULL, 
+		if (getnameinfo( (struct sockaddr *) &saddr, saddrlen, NULL,
 				0, portdata, sizeof(portdata), NI_NUMERICSERV) )
 		{
 			sock_geterror("getnameinfo(): ", errbuf, PCAP_ERRBUF_SIZE);
@@ -1079,7 +1079,7 @@ int serveropen_dp;							// keeps who is going to open the data connection
 	rpcap_createhdr( (struct rpcap_header *) sendbuf, RPCAP_MSG_STARTCAP_REPLY, 0, sizeof(struct rpcap_startcapreply) );
 
 	startcapreply= (struct rpcap_startcapreply *) &sendbuf[sendbufidx];
-	
+
 	if ( sock_bufferize(NULL, sizeof(struct rpcap_startcapreply), NULL,
 		&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, errbuf, PCAP_ERRBUF_SIZE) == -1)
 		goto error;
@@ -1104,7 +1104,7 @@ int serveropen_dp;							// keeps who is going to open the data connection
 		saddrlen = sizeof(struct sockaddr_storage);
 
 		socktemp= accept(sockdata, (struct sockaddr *) &saddr, &saddrlen);
-		
+
 		if (socktemp == -1)
 		{
 			sock_geterror("accept(): ", errbuf, PCAP_ERRBUF_SIZE);
@@ -1120,9 +1120,9 @@ int serveropen_dp;							// keeps who is going to open the data connection
 
 	/* GV we need this to create the thread as detached. */
 	/* GV otherwise, the thread handle is not destroyed  */
-	pthread_attr_init(&detachedAttribute); 
+	pthread_attr_init(&detachedAttribute);
 	pthread_attr_setdetachstate(&detachedAttribute, PTHREAD_CREATE_DETACHED);
-	
+
 	// Now we have to create a new thread to receive packets
 	if ( pthread_create(threaddata, &detachedAttribute, (void *) daemon_thrdatamain, (void *) fp) )
 	{
@@ -1190,7 +1190,7 @@ SOCKET sockctrl;
 
 	if ( sock_send(sockctrl, (char *) &header, sizeof(struct rpcap_header), errbuf, PCAP_ERRBUF_SIZE) == -1)
 		return -1;
-	
+
 	return 0;
 }
 
@@ -1231,7 +1231,7 @@ unsigned int i;
 
 	for (i= 0; i < bf_prog.bf_len; i++)
 	{
-		if ( ( *nread+= sock_recv(fp->rmt_sockctrl, (char *) &insn, 
+		if ( ( *nread+= sock_recv(fp->rmt_sockctrl, (char *) &insn,
 			sizeof(struct rpcap_filterbpf_insn), SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 			return -1;
 
@@ -1310,12 +1310,12 @@ struct rpcap_sampling rpcap_samp;
 int nread;					// number of bytes of the payload read from the socket
 
 
-	if ( ( nread= sock_recv(sockctrl, (char *) &rpcap_samp, sizeof(struct rpcap_sampling), 
+	if ( ( nread= sock_recv(sockctrl, (char *) &rpcap_samp, sizeof(struct rpcap_sampling),
 			SOCK_RECEIVEALL_YES, errbuf, PCAP_ERRBUF_SIZE)) == -1)
 		goto error;
 
 
-	// Save these settings in the pcap_t 
+	// Save these settings in the pcap_t
 	samp_param->method= rpcap_samp.method;
 	samp_param->value= ntohl(rpcap_samp.value);
 
@@ -1349,7 +1349,7 @@ int sendbufidx= 0;					// index which keeps the number of bytes currently buffer
 struct pcap_stat stats;				// local statistics
 struct rpcap_stats *netstats;		// statistics sent on the network
 
-	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL, 
+	if ( sock_bufferize(NULL, sizeof(struct rpcap_header), NULL,
 		&sendbufidx, RPCAP_NETBUF_SIZE, SOCKBUF_CHECKONLY, fp->errbuf, PCAP_ERRBUF_SIZE) == -1)
 		goto error;
 
@@ -1383,7 +1383,7 @@ error:
 
 
 
-int daemon_getstatsnopcap(SOCKET sockctrl, unsigned int ifdrops, unsigned int ifrecv, 
+int daemon_getstatsnopcap(SOCKET sockctrl, unsigned int ifdrops, unsigned int ifrecv,
 						  unsigned int krnldrop, unsigned int svrcapt, char *errbuf)
 {
 char sendbuf[RPCAP_NETBUF_SIZE];	// temporary buffer in which data to be sent is buffered
@@ -1551,7 +1551,7 @@ void daemon_seraddr(struct sockaddr_storage *sockaddrin, struct sockaddr_storage
 	else
 	{
 	struct sockaddr_in6 *sockaddr;
-	
+
 		sockaddr= (struct sockaddr_in6 *) sockaddrin;
 		sockaddr->sin6_family= htons(sockaddr->sin6_family);
 		sockaddr->sin6_port= htons(sockaddr->sin6_port);
@@ -1589,7 +1589,7 @@ struct timeval now;
 	pthread_cond_init(&cond, NULL);
 
 	gettimeofday(&now, NULL);
-	
+
 	abstime.tv_sec = now.tv_sec + msec/1000;
 	abstime.tv_nsec = now.tv_usec * 1000 + (msec%1000) * 1000 * 1000;
 
@@ -1599,6 +1599,3 @@ struct timeval now;
 	pthread_cond_destroy(&cond);
 #endif
 }
-
-
-
