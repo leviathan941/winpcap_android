@@ -14,7 +14,8 @@ LIB	= -lpcap -lcrypt
 LIBPATH	= -L../
 
 # Files that are needed to compile this project
-FILES = rpcapd.o daemon.o utils.o fileconf.o pcap-remote.o sockutils.o pcap-new.o
+FILES = rpcapd.o daemon.o thread_cancel_linux.o utils.o fileconf.o pcap-remote.o sockutils.o \
+	pcap-new.o
 
 # Makefile syntax:
 # Project name : dependencies
@@ -28,6 +29,9 @@ rpcapd.o: rpcapd.c
 
 daemon.o: daemon.c
 	$(CC) $(CFLAGS) $(INCLUDE) -c daemon.c
+
+thread_cancel_linux.o: thread_cancel_linux.c
+	$(CC) $(CFLAGS) $(INCLUDE) -c thread_cancel_linux.c
 
 utils.o: utils.c
 	$(CC) $(CFLAGS) $(INCLUDE) -c utils.c
@@ -47,4 +51,3 @@ pcap-new.o: ../pcap-new.c
 clean:
 	rm -f *.o
 	rm rpcapd
-

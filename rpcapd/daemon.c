@@ -39,6 +39,7 @@
 #include "pcap-remote.h"
 #include "daemon.h"
 #include "sockutils.h"	// for socket calls
+#include "thread_cancel.h"
 
 #ifndef WIN32			// for select() and such
 #include <unistd.h>
@@ -122,9 +123,7 @@ int retval;							// select() return value
 	if (! pars->isactive)
 	{
 		// Modify thread params so that it can be killed at any time
-		if (pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL) )
-			goto end;
-		if (pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL) )
+		if (set_thread_cancelable())
 			goto end;
 	}
 
@@ -404,7 +403,7 @@ end:
 	{
 		if (threaddata)
 		{
-			pthread_cancel(threaddata);
+			cancel_thread(threaddata);
 			threaddata= 0;
 		}
 		if (fp->rmt_sockdata)
@@ -1145,7 +1144,7 @@ error:
 		freeaddrinfo(addrinfo);
 
 	if (threaddata)
-		pthread_cancel(*threaddata);
+		cancel_thread(*threaddata);
 
 	if (sockdata)
 		sock_close(sockdata, NULL, 0);
@@ -1172,7 +1171,7 @@ SOCKET sockctrl;
 
 	if (threaddata)
 	{
-		pthread_cancel(*threaddata);
+		cancel_thread(*threaddata);
 		threaddata= 0;
 	}
 	if (fp->rmt_sockdata)
@@ -1449,9 +1448,7 @@ int sendbufidx;						// index which keeps the number of bytes currently buffered
 	}
 
 	// Modify thread params so that it can be killed at any time
-	if (pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL) )
-		goto error;
-	if (pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL) )
+	if (set_thread_cancelable())
 		goto error;
 
 	// Retrieve the packets
@@ -1541,16 +1538,16 @@ void daemon_seraddr(struct sockaddr_storage *sockaddrin, struct sockaddr_storage
 	// Warning: we support only AF_INET and AF_INET6
 	if (sockaddrin->ss_family == AF_INET)
 	{
-	struct sockaddr_in *sockaddr;
+		struct sockaddr_in *sockaddr;
 
 		sockaddr= (struct sockaddr_in *) sockaddrin;
 		sockaddr->sin_family= htons(sockaddr->sin_family);
 		sockaddr->sin_port= htons(sockaddr->sin_port);
 		memcpy(sockaddrout, sockaddr, sizeof(struct sockaddr_in) );
 	}
-	else
+	else if(sockaddrin->ss_family == AF_INET6)
 	{
-	struct sockaddr_in6 *sockaddr;
+		struct sockaddr_in6 *sockaddr;
 
 		sockaddr= (struct sockaddr_in6 *) sockaddrin;
 		sockaddr->sin6_family= htons(sockaddr->sin6_family);

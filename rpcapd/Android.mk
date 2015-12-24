@@ -36,6 +36,7 @@ LOCAL_SRC_FILES := \
 	daemon.c \
 	utils.c \
 	fileconf.c \
+	thread_cancel_android.c \
 	../sockutils.c \
 	../pcap-remote.c \
 	../pcap-new.c
